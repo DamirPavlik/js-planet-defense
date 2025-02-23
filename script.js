@@ -24,9 +24,11 @@ class Planet {
      */
     draw(context) {
         context.drawImage(this.image, this.x - 100, this.y - 100);
-        context.beginPath();
-        context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        context.stroke();
+        if (this.game.debug) {
+            context.beginPath();
+            context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            context.stroke();
+        }
     }
 }
 
@@ -75,9 +77,13 @@ class Player {
         context.translate(this.x, this.y);
         context.rotate(this.angle);
         context.drawImage(this.image, -this.radius, -this.radius);
-        context.beginPath();
-        context.arc(0, 0, this.radius, 0, Math.PI * 2);
-        context.stroke();
+
+        if (this.game.debug) {
+            context.beginPath();
+            context.arc(0, 0, this.radius, 0, Math.PI * 2);
+            context.stroke();
+        }
+
         context.restore();
     }
 
@@ -110,6 +116,9 @@ class Game {
 
         /** @type {Player} the player instance within the game */
         this.player = new Player(this);
+
+        /** @type {boolean} debug mode */
+        this.debug = true;
         
         /**
          * @type {{ x: number, y: number }}
@@ -120,12 +129,19 @@ class Game {
         }
         
         /**
-         * @param {MouseEvent} e - The mouse event object.
+         * @param {MouseEvent} e - The mouse event object
         */
         window.addEventListener("mousemove", e => {
             this.mouse.x = e.offsetX;
             this.mouse.y = e.offsetY;
         });
+
+        /**
+         * @param {MouseEvent} e - the key up event object
+        */
+        window.addEventListener("keyup", e => {
+            if (e.key === 'd') this.debug = !this.debug;
+        })
     }
 
     /**
