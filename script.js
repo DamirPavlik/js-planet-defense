@@ -30,9 +30,36 @@ class Planet {
     }
 }
 
+class Player {
+    /**
+     * @param {Game} game - the instace of a game that this player belongs to.
+     */
+    constructor(game) {
+        this.game = game;
+        this.x = this.game.width * 0.5;
+        this.y = this.game.height * 0.5;
+        this.radius = 40;
+        this.image = document.querySelector("#player");
+    }
+
+    /**
+     * @param {CanvasRenderingContext2D} context - 2d rendering context of a canvas 
+     */
+    draw(context) {
+        context.drawImage(this.image, this.x - this.radius, this.y - this.radius);
+        context.beginPath();
+        context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        context.stroke();
+    }
+
+    update() {
+        
+    }
+}
+
 class Game {
     /**
-     * @param {HTMLCanvasElement} canvas - The canvas element where the game is rendered.
+     * @param {HTMLCanvasElement} canvas - the canvas element where the game is rendered.
     */
     constructor(canvas) {
         /** @type {HTMLCanvasElement} the canvas element associated with the game */
@@ -46,6 +73,25 @@ class Game {
 
         /** @type {Planet} the planet instance within the game */
         this.planet = new Planet(this);
+
+        /** @type {Player} the player instance within the game */
+        this.player = new Player(this);
+        
+        /**
+         * @type {{ x: number, y: number }}
+        */
+        this.mouse = {
+            x: 0,
+            y: 0
+        }
+        
+        /**
+         * @param {MouseEvent} e - The mouse event object.
+        */
+        window.addEventListener("mousemove", e => {
+            this.mouse.x = e.offsetX;
+            this.mouse.y = e.offsetY;
+        });
     }
 
     /**
@@ -53,6 +99,12 @@ class Game {
      */
     render(context) {
         this.planet.draw(context);
+        this.player.draw(context);
+        this.player.update();
+        context.beginPath();
+        context.moveTo(this.planet.x, this.planet.y);
+        context.lineTo(this.mouse.x, this.mouse.y);
+        context.stroke();
     }
 } 
 
@@ -71,5 +123,10 @@ window.addEventListener("load", function() {
     ctx.lineWidth = 2;
 
     const game = new Game(canvas);
-    game.render(ctx);
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        game.render(ctx);
+        requestAnimationFrame(animate)
+    }
+    requestAnimationFrame(animate);
 });
