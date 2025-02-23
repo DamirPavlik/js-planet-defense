@@ -35,11 +35,22 @@ class Player {
      * @param {Game} game - the instace of a game that this player belongs to.
      */
     constructor(game) {
+        /** @type {Game} Reference to the game instance */
         this.game = game;
+
+        /** @type {number} X coordinate of the player's center */
         this.x = this.game.width * 0.5;
+
+        /** @type {number} Y coordinate of the player's center */
         this.y = this.game.height * 0.5;
+
+        /** @type {number} Radius of the player */
         this.radius = 40;
+
+        /** @type {HTMLImageElement | null} The player sprite image */
         this.image = document.querySelector("#player");
+
+        this.aim;
     }
 
     /**
@@ -53,7 +64,9 @@ class Player {
     }
 
     update() {
-        
+        this.aim = this.game.calcAim(this.game.mouse, this.game.planet);
+        this.x = this.game.planet.x + (this.game.planet.radius + this.radius) * this.aim[0];
+        this.y = this.game.planet.y + (this.game.planet.radius + this.radius) * this.aim[1];
     }
 }
 
@@ -105,6 +118,26 @@ class Game {
         context.moveTo(this.planet.x, this.planet.y);
         context.lineTo(this.mouse.x, this.mouse.y);
         context.stroke();
+    }
+    
+    /**
+     * Calculates the aim direction and distance between two points.
+     * @param {{ x: number, y: number }} a - The first point.
+     * @param {{ x: number, y: number }} b - The second point.
+     * @returns {[number, number, number, number]} A tuple containing:
+     *   - `aimX` (number): The normalized x-direction.
+     *   - `aimY` (number): The normalized y-direction.
+     *   - `dx` (number): The difference in x-coordinates.
+     *   - `dy` (number): The difference in y-coordinates.
+     */
+    calcAim(a, b) {
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        const distance = Math.hypot(dx, dy);
+        const aimX = dx / distance;
+        const aimY = dy / distance;
+
+        return [aimX, aimY, dx, dy];
     }
 } 
 
