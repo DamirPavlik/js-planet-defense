@@ -1,0 +1,8 @@
+#canvas1 {
+    border: 3px solid #000;
+    background: url('/imgs/background.png');
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+}
