@@ -1,26 +1,26 @@
 class Planet {
     /**
-     * @param {Game} game - the instace of a game that this planet belongs to.
+     * @param {Game} game 
      */
     constructor(game) {
-        /** @type {Game} reference to the game instance */
+        /** @type {Game} */
         this.game = game;
 
-        /** @type {number} x cord of planets center */
+        /** @type {number} */
         this.x = this.game.width * 0.5;
 
-        /** @type {number} y cord of planets center */
+        /** @type {number} */
         this.y = this.game.height * 0.5;
 
-        /** @type {number} planet radius */
+        /** @type {number} */
         this.radius = 80;
 
-        /** @type {HTMLImageElement} img of planet */
+        /** @type {HTMLImageElement} */
         this.image = document.querySelector("#planet");
     }
 
     /**
-     * @param {CanvasRenderingContext2D} context - 2d rendering context of a canvas 
+     * @param {CanvasRenderingContext2D} context 
      */
     draw(context) {
         context.drawImage(this.image, this.x - 100, this.y - 100);
@@ -32,45 +32,103 @@ class Planet {
     }
 }
 
-class Player {
+class Projectile {
     /**
-     * @param {Game} game - the instace of a game that this player belongs to.
+     * @param {Game} game 
      */
     constructor(game) {
-        /** @type {Game} Reference to the game instance */
+        /** @type {Game} */
         this.game = game;
 
-        /** @type {number} X coordinate of the player's center */
+        /** @type {number} */
+        this.x;
+
+        /** @type {number} */
+        this.y;
+
+        /** @type {number} */
+        this.radius = 20;
+
+        /** @type {number} */
+        this.speedX = 1;
+
+        /** @type {number} */
+        this.speedY = 1;
+
+        /** @type {boolean} */
+        this.free = true;
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     */
+    start(x, y) {
+        this.free = false;
+        this.x = x;
+        this.y = y;
+    }
+
+    reset() {
+        this.free = true;
+    }
+
+    /**
+     * @param {CanvasRenderingContext2D} context 
+     */
+    draw(context) {
+        if (!this.free) {
+            context.save();
+            context.beginPath();
+            context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            context.fillStyle = "gold";
+            context.fill();
+            context.restore();
+        }
+    }
+
+    update() {
+        if (!this.free) {
+            this.x += this.speedX;
+            this.y += this.speedY;
+        }
+    }
+}
+
+
+class Player {
+    /**
+     * @param {Game} game 
+     */
+    constructor(game) {
+        /** @type {Game} */
+        this.game = game;
+
+        /** @type {number} */
         this.x = this.game.width * 0.5;
 
-        /** @type {number} Y coordinate of the player's center */
+        /** @type {number} */
         this.y = this.game.height * 0.5;
 
-        /** @type {number} Radius of the player */
+        /** @type {number} */
         this.radius = 40;
 
-        /** @type {HTMLImageElement | null} The player sprite image */
+        /** @type {HTMLImageElement | null} */
         this.image = document.querySelector("#player");
 
         /** 
          * @type {[number, number, number, number] | undefined} 
-         * The aim vector representing direction and distance to the target.
-         * [aimX, aimY, dx, dy]:
-         * - `aimX` (number): Normalized x-direction.
-         * - `aimY` (number): Normalized y-direction.
-         * - `dx` (number): Difference in x-coordinates.
-         * - `dy` (number): Difference in y-coordinates.
          */
         this.aim;
 
         /** 
-         * @type {number} The player's rotation angle in radians.
+         * @type {number} 
          */
         this.angle = 0;
     }
 
     /**
-     * @param {CanvasRenderingContext2D} context - 2d rendering context of a canvas 
+     * @param {CanvasRenderingContext2D} context 
      */
     draw(context) {
         context.save();
@@ -95,30 +153,45 @@ class Player {
 
         this.angle = Math.atan2(this.aim[3], this.aim[2]);
     }
+
+    shoot() {
+        /** @type {Projectile} */
+        const projectile = this.game.getProjectile();
+        if (projectile) projectile.start(this.x, this.y);
+    }
 }
 
 class Game {
     /**
-     * @param {HTMLCanvasElement} canvas - the canvas element where the game is rendered.
+     * @param {HTMLCanvasElement} canvas 
     */
     constructor(canvas) {
-        /** @type {HTMLCanvasElement} the canvas element associated with the game */
+        /** @type {HTMLCanvasElement} */
         this.canvas = canvas;
 
-        /** @type {number} width of the game canvas */
+        /** @type {number} */
         this.width = this.canvas.width;
 
-        /** @type {number} height of the game canvas */
+        /** @type {number} */
         this.height = this.canvas.height;
 
-        /** @type {Planet} the planet instance within the game */
+        /** @type {Planet} */
         this.planet = new Planet(this);
 
-        /** @type {Player} the player instance within the game */
+        /** @type {Player} */
         this.player = new Player(this);
 
-        /** @type {boolean} debug mode */
+        /** @type {boolean} */
         this.debug = true;
+
+        /** @type {Projectile[]} */
+        this.projectilePool = [];
+
+        /** @type {number} */
+        this.numberOfProjectiles = 5;
+
+        this.createProjectilePool();
+        console.log(this.projectilePool);
         
         /**
          * @type {{ x: number, y: number }}
@@ -129,7 +202,7 @@ class Game {
         }
         
         /**
-         * @param {MouseEvent} e - The mouse event object
+         * @param {MouseEvent} e 
         */
         window.addEventListener("mousemove", e => {
             this.mouse.x = e.offsetX;
@@ -137,7 +210,16 @@ class Game {
         });
 
         /**
-         * @param {MouseEvent} e - the key up event object
+         * @param {MouseEvent} e 
+        */
+        window.addEventListener("mousedown", e => {
+            this.mouse.x = e.offsetX;
+            this.mouse.y = e.offsetY;
+            this.player.shoot();
+        });
+
+        /**
+         * @param {MouseEvent} e 
         */
         window.addEventListener("keyup", e => {
             if (e.key === 'd') this.debug = !this.debug;
@@ -145,24 +227,22 @@ class Game {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} context - 2d rendering context of a canvas 
+     * @param {CanvasRenderingContext2D} context 
      */
     render(context) {
         this.planet.draw(context);
         this.player.draw(context);
         this.player.update();
-        context.beginPath();
+        this.projectilePool.forEach(p => {
+            p.draw(context);
+            p.update();
+        })
     }
     
     /**
-     * Calculates the aim direction and distance between two points.
-     * @param {{ x: number, y: number }} a - The first point.
-     * @param {{ x: number, y: number }} b - The second point.
-     * @returns {[number, number, number, number]} A tuple containing:
-     *   - `aimX` (number): The normalized x-direction.
-     *   - `aimY` (number): The normalized y-direction.
-     *   - `dx` (number): The difference in x-coordinates.
-     *   - `dy` (number): The difference in y-coordinates.
+     * @param {{ x: number, y: number }} a 
+     * @param {{ x: number, y: number }} b 
+     * @returns {[number, number, number, number]} 
      */
     calcAim(a, b) {
         const dx = a.x - b.x;
@@ -172,6 +252,18 @@ class Game {
         const aimY = dy / distance * -1;
 
         return [aimX, aimY, dx, dy];
+    }
+
+    createProjectilePool() {
+        for (let i = 0; i < this.numberOfProjectiles; ++i) {
+            this.projectilePool.push(new Projectile(this));
+        }
+    }
+
+    getProjectile() {
+        for (let i = 0; i < this.projectilePool.length; ++i) {
+            if (this.projectilePool[i].free) return this.projectilePool[i];
+        }
     }
 } 
 
