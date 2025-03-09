@@ -129,10 +129,10 @@ class Enemy {
         this.height = this.radius * 2;
 
         /** @type {number} */
-        this.speedX = 1;
+        this.speedX = 0;
 
         /** @type {number} */
-        this.speedY = -1;
+        this.speedY = 0;
 
         /** @type {boolean} */
         this.free = true;
@@ -140,10 +140,14 @@ class Enemy {
 
     start() {
         this.free = false;
-
-        this.x = Math.random() * this.game.width;
-        this.y = Math.random() * this.game.height;
-
+        if (Math.random() < 0.5) {
+            this.x = Math.random() * this.game.width;
+            this.y = Math.random() < 0.5 ?  -this.radius : this.game.height + this.radius;
+        } else {
+            this.x = Math.random() < 0.5 ? -this.radius : this.game.width + this.radius;
+            this.y = Math.random() * this.game.height;
+        }
+        
         const aim = this.game.calcAim(this, this.game.planet);
         this.speedX = aim[0];
         this.speedY = aim[1];
@@ -176,6 +180,13 @@ class Enemy {
             if (this.game.checkCollision(this, this.game.player)) {
                 this.reset();
             }
+
+            this.game.projectilePool.forEach(p => {
+                if (!p.free && this.game.checkCollision(this, p)) {
+                    p.reset();
+                    this.reset();
+                }
+            });
         }
     }
 }
@@ -286,10 +297,12 @@ class Game {
         this.createEnemyPool();
         
         this.enemyPool[0].start();
-        this.enemyPool[1].start();
-        this.enemyPool[2].start();
-        this.enemyPool[3].start();
-        this.enemyPool[4].start();
+
+        /** @type {number} */
+        this.enemyTimer = 0;
+
+        /** @type {number} */
+        this.enemyInterval = 1000;
 
         /**
          * @type {{ x: number, y: number }}
@@ -327,8 +340,9 @@ class Game {
 
     /**
      * @param {CanvasRenderingContext2D} context 
+     * @param {number} deltaTime
      */
-    render(context) {
+    render(context, deltaTime) {
         this.planet.draw(context);
         this.player.draw(context);
         this.player.update();
@@ -336,12 +350,20 @@ class Game {
         this.projectilePool.forEach(p => {
             p.draw(context);
             p.update();
-        })
+        });
 
         this.enemyPool.forEach(e => {
             e.draw(context);
             e.update();
-        })
+        });
+
+        if (this.enemyTimer < this.enemyInterval) {
+            this.enemyTimer += deltaTime;
+        } else {
+            this.enemyTimer = 0;
+            const enemy = this.getEnemy();
+            if (enemy) enemy.start();
+        }
     }
     
     /**
@@ -413,10 +435,17 @@ window.addEventListener("load", function() {
     ctx.lineWidth = 2;
 
     const game = new Game(canvas);
-    function animate() {
+
+    let lastTime = 0;
+    /**
+     * @param {number} timeStamp 
+     */
+    function animate(timeStamp) {
+        const deltaTime = timeStamp - lastTime;
+        lastTime = timeStamp;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        game.render(ctx);
-        requestAnimationFrame(animate)
+        game.render(ctx, deltaTime);
+        requestAnimationFrame(animate);
     }
     requestAnimationFrame(animate);
 });
