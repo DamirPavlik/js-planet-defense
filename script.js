@@ -105,6 +105,81 @@ class Projectile {
     }
 }
 
+class Enemy {
+    /**
+     * @param {Game} game 
+     */
+    constructor(game) {
+        /** @type {Game} */
+        this.game = game;
+
+        /** @type {number} */
+        this.x = 100;
+
+        /** @type {number} */
+        this.y = 100;
+
+        /** @type {number} */
+        this.radius = 40;
+        
+        /** @type {number} */
+        this.width = this.radius * 2;
+
+        /** @type {number} */
+        this.height = this.radius * 2;
+
+        /** @type {number} */
+        this.speedX = 1;
+
+        /** @type {number} */
+        this.speedY = -1;
+
+        /** @type {boolean} */
+        this.free = true;
+    }
+
+    start() {
+        this.free = false;
+
+        this.x = Math.random() * this.game.width;
+        this.y = Math.random() * this.game.height;
+
+        const aim = this.game.calcAim(this, this.game.planet);
+        this.speedX = aim[0];
+        this.speedY = aim[1];
+    }
+
+    reset() {
+        this.free = true;
+    }
+
+    /**
+     * @param {CanvasRenderingContext2D} context 
+     */
+    draw(context) {
+        if (!this.free) {
+            context.beginPath();
+            context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            context.stroke();
+        }
+    }
+
+    update() {
+        if (!this.free) {
+            this.x += this.speedX;
+            this.y += this.speedY;
+
+            if (this.game.checkCollision(this, this.game.planet)) {
+                this.reset();
+            }
+
+            if (this.game.checkCollision(this, this.game.player)) {
+                this.reset();
+            }
+        }
+    }
+}
+
 
 class Player {
     /**
@@ -201,8 +276,21 @@ class Game {
         this.numberOfProjectiles = 30;
 
         this.createProjectilePool();
-        console.log(this.projectilePool);
+
+        /** @type {Enemy[]} */
+        this.enemyPool = [];
+
+        /** @type {number} */
+        this.numberOfEnemies = 20;
+
+        this.createEnemyPool();
         
+        this.enemyPool[0].start();
+        this.enemyPool[1].start();
+        this.enemyPool[2].start();
+        this.enemyPool[3].start();
+        this.enemyPool[4].start();
+
         /**
          * @type {{ x: number, y: number }}
         */
@@ -244,9 +332,15 @@ class Game {
         this.planet.draw(context);
         this.player.draw(context);
         this.player.update();
+
         this.projectilePool.forEach(p => {
             p.draw(context);
             p.update();
+        })
+
+        this.enemyPool.forEach(e => {
+            e.draw(context);
+            e.update();
         })
     }
     
@@ -265,6 +359,20 @@ class Game {
         return [aimX, aimY, dx, dy];
     }
 
+    /**
+     * @param {{ x: number, y: number, radius: number }} a 
+     * @param {{ x: number, y: number, radius: number }} b 
+     * @returns {boolean}
+     */
+    checkCollision(a, b) {
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        const distacne = Math.hypot(dx, dy);
+        const sumOfRadii = a.radius + b.radius;
+
+        return distacne < sumOfRadii;
+    }
+
     createProjectilePool() {
         for (let i = 0; i < this.numberOfProjectiles; ++i) {
             this.projectilePool.push(new Projectile(this));
@@ -274,6 +382,18 @@ class Game {
     getProjectile() {
         for (let i = 0; i < this.projectilePool.length; ++i) {
             if (this.projectilePool[i].free) return this.projectilePool[i];
+        }
+    }
+
+    createEnemyPool() {
+        for (let i = 0; i < this.numberOfEnemies; ++i) {
+            this.enemyPool.push(new Enemy(this));
+        }
+    }
+
+    getEnemy() {
+        for (let i = 0; i < this.enemyPool.length; ++i) {
+            if (this.enemyPool[i].free) return this.enemyPool[i];
         }
     }
 } 
