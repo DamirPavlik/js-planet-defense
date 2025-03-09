@@ -162,9 +162,13 @@ class Enemy {
      */
     draw(context) {
         if (!this.free) {
-            context.beginPath();
-            context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            context.stroke();
+            context.drawImage(this.image, 0, 0, this.width, this.height, this.x - this.radius, this.y - this.radius, this.width, this.height);
+            
+            if (this.game.debug) {
+                context.beginPath();
+                context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                context.stroke();
+            }
         }
     }
 
@@ -191,6 +195,15 @@ class Enemy {
     }
 }
 
+class Asteroid extends Enemy {
+    /**
+     * @param {Game} game 
+     */
+    constructor(game) {
+        super(game);
+        this.image = document.querySelector("#asteroid");
+    }
+}
 
 class Player {
     /**
@@ -302,7 +315,7 @@ class Game {
         this.enemyTimer = 0;
 
         /** @type {number} */
-        this.enemyInterval = 1000;
+        this.enemyInterval = 1700;
 
         /**
          * @type {{ x: number, y: number }}
@@ -409,7 +422,7 @@ class Game {
 
     createEnemyPool() {
         for (let i = 0; i < this.numberOfEnemies; ++i) {
-            this.enemyPool.push(new Enemy(this));
+            this.enemyPool.push(new Asteroid(this));
         }
     }
 
