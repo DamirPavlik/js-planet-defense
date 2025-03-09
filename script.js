@@ -140,6 +140,9 @@ class Enemy {
 
     start() {
         this.free = false;
+        this.frameY = Math.floor(Math.random() * 4);
+        this.frameX = 0;
+        this.lives = this.maxLives;
         if (Math.random() < 0.5) {
             this.x = Math.random() * this.game.width;
             this.y = Math.random() < 0.5 ?  -this.radius : this.game.height + this.radius;
@@ -158,16 +161,34 @@ class Enemy {
     }
 
     /**
+     * @param {number} damage 
+     */
+    hit(damage) {
+        this.lives -= damage;
+    }
+
+    /**
      * @param {CanvasRenderingContext2D} context 
      */
     draw(context) {
         if (!this.free) {
-            context.drawImage(this.image, 0, 0, this.width, this.height, this.x - this.radius, this.y - this.radius, this.width, this.height);
+            context.drawImage(
+                this.image,
+                this.frameX * this.width, 
+                this.frameY * this.height, 
+                this.width, 
+                this.height, 
+                this.x - this.radius, 
+                this.y - this.radius, 
+                this.width, this.height
+            );
             
             if (this.game.debug) {
                 context.beginPath();
                 context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 context.stroke();
+
+                context.fillText(this.lives, this.x, this.y);
             }
         }
     }
@@ -186,11 +207,16 @@ class Enemy {
             }
 
             this.game.projectilePool.forEach(p => {
-                if (!p.free && this.game.checkCollision(this, p)) {
+                if (!p.free && this.game.checkCollision(this, p) && this.lives >= 1) {
                     p.reset();
-                    this.reset();
+                    this.hit(1);
                 }
             });
+            if (this.lives < 1 && this.game.spriteUpdate) {
+                this.frameX++;
+
+            }
+            if (this.frameX > this.maxFrame) this.reset();
         }
     }
 }
@@ -201,7 +227,24 @@ class Asteroid extends Enemy {
      */
     constructor(game) {
         super(game);
+        
+        /** @type {HTMLImageElement} */
         this.image = document.querySelector("#asteroid");
+
+        /** @type {number} */
+        this.frameY = Math.floor(Math.random() * 4);
+
+        /** @type {number} */
+        this.frameX = 0;
+
+        /** @type {number} */
+        this.lives = 5;
+
+        /** @type {number} */
+        this.maxFrame = 7;
+
+        /** @type {number} */
+        this.maxLives = this.lives;
     }
 }
 
@@ -317,6 +360,15 @@ class Game {
         /** @type {number} */
         this.enemyInterval = 1700;
 
+        /** @type {boolean} */
+        this.spriteUpdate = false;
+
+        /** @type {number} */
+        this.spriteTimer = 0;
+
+        /** @type {number} */
+        this.spriteInterval = 150;
+
         /**
          * @type {{ x: number, y: number }}
         */
@@ -377,6 +429,15 @@ class Game {
             const enemy = this.getEnemy();
             if (enemy) enemy.start();
         }
+
+        if (this.spriteTimer < this.spriteInterval) {
+            this.spriteTimer += deltaTime;
+            this.spriteUpdate = false;
+        } else {
+            this.spriteTimer = 0;
+            this.spriteUpdate = true;
+        }
+
     }
     
     /**
@@ -444,8 +505,14 @@ window.addEventListener("load", function() {
 
     canvas.width = 800;
     canvas.height = 800;
+
     ctx.strokeStyle = 'white';
     ctx.lineWidth = 2;
+
+    ctx.font = "50px Helvetica";
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
     const game = new Game(canvas);
 
