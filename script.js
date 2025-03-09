@@ -47,13 +47,15 @@ class Projectile {
         this.y;
 
         /** @type {number} */
-        this.radius = 20;
+        this.radius = 5;
 
         /** @type {number} */
         this.speedX = 1;
 
         /** @type {number} */
         this.speedY = 1;
+
+        this.speedModified = 5;
 
         /** @type {boolean} */
         this.free = true;
@@ -62,11 +64,15 @@ class Projectile {
     /**
      * @param {number} x
      * @param {number} y
+     * @param {number} speedX
+     * @param {number} speedY
      */
-    start(x, y) {
+    start(x, y, speedX, speedY) {
         this.free = false;
         this.x = x;
         this.y = y;
+        this.speedX = speedX * this.speedModified;
+        this.speedY = speedY * this.speedModified;
     }
 
     reset() {
@@ -91,6 +97,10 @@ class Projectile {
         if (!this.free) {
             this.x += this.speedX;
             this.y += this.speedY;
+        }
+
+        if (this.x < 0 || this.x > this.game.width || this.y < 0 || this.y > this.game.height) {
+            this.reset();
         }
     }
 }
@@ -157,7 +167,7 @@ class Player {
     shoot() {
         /** @type {Projectile} */
         const projectile = this.game.getProjectile();
-        if (projectile) projectile.start(this.x, this.y);
+        if (projectile) projectile.start(this.x + this.radius * this.aim[0], this.y + this.radius * this.aim[1], this.aim[0], this.aim[1]);
     }
 }
 
@@ -188,7 +198,7 @@ class Game {
         this.projectilePool = [];
 
         /** @type {number} */
-        this.numberOfProjectiles = 5;
+        this.numberOfProjectiles = 30;
 
         this.createProjectilePool();
         console.log(this.projectilePool);
@@ -223,6 +233,7 @@ class Game {
         */
         window.addEventListener("keyup", e => {
             if (e.key === 'd') this.debug = !this.debug;
+            if (e.key === '1') this.player.shoot();
         })
     }
 
