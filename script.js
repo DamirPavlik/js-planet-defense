@@ -138,11 +138,15 @@ class Enemy {
         this.angle = 0;
 
         /** @type {boolean} */
+        this.collided = false;
+
+        /** @type {boolean} */
         this.free = true;
     }
 
     start() {
         this.free = false;
+        this.collided = false;
         this.frameY = Math.floor(Math.random() * 4);
         this.frameX = 0;
         this.lives = this.maxLives;
@@ -212,10 +216,12 @@ class Enemy {
                 this.lives = 0;
                 this.speedX = 0;
                 this.speedY = 0;
+                this.collided = true;
             }
 
             if (this.game.checkCollision(this, this.game.player)) {
                 this.lives = 0;
+                this.collided = true;
             }
 
             this.game.projectilePool.forEach(p => {
@@ -228,7 +234,10 @@ class Enemy {
                 this.frameX++;
 
             }
-            if (this.frameX > this.maxFrame) this.reset();
+            if (this.frameX > this.maxFrame) {
+                this.reset();
+                if (!this.collided) this.game.score += this.maxLives;
+            }
         }
     }
 }
@@ -408,6 +417,15 @@ class Game {
         /** @type {number} */
         this.spriteInterval = 150;
 
+        /** @type {number} */
+        this.score = 0;
+
+        /** @type {number} */
+        this.winningScore = 10;
+
+        /** @type {boolean} */
+        this.gameOver = false;
+
         /**
          * @type {{ x: number, y: number }}
         */
@@ -448,6 +466,7 @@ class Game {
      */
     render(context, deltaTime) {
         this.planet.draw(context);
+        this.drawStatusText(context);
         this.player.draw(context);
         this.player.update();
 
@@ -460,6 +479,16 @@ class Game {
             e.draw(context);
             e.update();
         });
+
+        if (!this.gameOver) {
+            if (this.enemyTimer < this.enemyInterval) {
+                this.enemyTimer += deltaTime;
+            } else {
+                this.enemyTimer = 0;
+                const enemy = this.getEnemy();
+                if (enemy) enemy.start();
+            }
+        }
 
         if (this.enemyTimer < this.enemyInterval) {
             this.enemyTimer += deltaTime;
@@ -477,6 +506,37 @@ class Game {
             this.spriteUpdate = true;
         }
 
+        if (this.score >= this.winningScore) {
+            this.gameOver = true;
+        }
+    }
+
+    /**
+     * @param {CanvasRenderingContext2D} context 
+     */
+    drawStatusText(context) {
+        context.save();
+        context.textAlign = 'left';
+        context.font = '30px Impact';
+        context.fillText("Score: " + this.score, 20,  30);
+        context.restore();
+
+        if (this.gameOver) {
+            context.textAlign = 'center';
+            /** @type {string} */
+            let msg1;
+            /** @type {string} */
+            let msg2;
+
+            if (this.score >= this.winningScore) {
+                msg1 = "You win!";
+                msg2 = "Your score is " + this.score + "!";
+            }
+            context.font = '100px Impact';
+            context.fillText(msg1, this.width * 0.5, 200);
+            context.font = '50px Impact';
+            context.fillText(msg2, this.width * 0.5, 550);
+        }
     }
     
     /**
