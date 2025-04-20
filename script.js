@@ -135,6 +135,9 @@ class Enemy {
         this.speedY = 0;
 
         /** @type {number} */
+        this.speedModifier = Math.random() * 0.5 + 0.1;
+
+        /** @type {number} */
         this.angle = 0;
 
         /** @type {boolean} */
@@ -159,8 +162,8 @@ class Enemy {
         }
         
         const aim = this.game.calcAim(this, this.game.planet);
-        this.speedX = aim[0];
-        this.speedY = aim[1];
+        this.speedX = aim[0] * this.speedModifier;
+        this.speedY = aim[1] * this.speedModifier;
         
         this.angle = Math.atan2(aim[3], aim[2]) + Math.PI * 0.5;
     }
@@ -212,16 +215,18 @@ class Enemy {
             this.x += this.speedX;
             this.y += this.speedY;
 
-            if (this.game.checkCollision(this, this.game.planet)) {
+            if (this.game.checkCollision(this, this.game.planet) && this.lives >= 1) {
                 this.lives = 0;
                 this.speedX = 0;
                 this.speedY = 0;
                 this.collided = true;
+                this.game.lives--;
             }
 
-            if (this.game.checkCollision(this, this.game.player)) {
+            if (this.game.checkCollision(this, this.game.player) && this.lives >= 1) {
                 this.lives = 0;
                 this.collided = true;
+                this.game.lives--;
             }
 
             this.game.projectilePool.forEach(p => {
@@ -382,7 +387,7 @@ class Game {
         this.player = new Player(this);
 
         /** @type {boolean} */
-        this.debug = true;
+        this.debug = false;
 
         /** @type {Projectile[]} */
         this.projectilePool = [];
@@ -406,7 +411,7 @@ class Game {
         this.enemyTimer = 0;
 
         /** @type {number} */
-        this.enemyInterval = 1700;
+        this.enemyInterval = 800;
 
         /** @type {boolean} */
         this.spriteUpdate = false;
@@ -421,10 +426,13 @@ class Game {
         this.score = 0;
 
         /** @type {number} */
-        this.winningScore = 10;
+        this.winningScore = 50;
 
         /** @type {boolean} */
         this.gameOver = false;
+
+        /** @type {number} */
+        this.lives = 30;
 
         /**
          * @type {{ x: number, y: number }}
@@ -506,7 +514,7 @@ class Game {
             this.spriteUpdate = true;
         }
 
-        if (this.score >= this.winningScore) {
+        if (this.score >= this.winningScore || this.lives < 1) {
             this.gameOver = true;
         }
     }
@@ -519,7 +527,10 @@ class Game {
         context.textAlign = 'left';
         context.font = '30px Impact';
         context.fillText("Score: " + this.score, 20,  30);
-        context.restore();
+
+        for (let i = 0; i < this.lives; ++i) {
+            context.fillRect(20 + 15 * i, 60, 10, 30);
+        }
 
         if (this.gameOver) {
             context.textAlign = 'center';
@@ -531,12 +542,16 @@ class Game {
             if (this.score >= this.winningScore) {
                 msg1 = "You win!";
                 msg2 = "Your score is " + this.score + "!";
+            } else {
+                msg1 = "You Lose!";
+                msg2 = "Try Again!";
             }
             context.font = '100px Impact';
             context.fillText(msg1, this.width * 0.5, 200);
             context.font = '50px Impact';
             context.fillText(msg2, this.width * 0.5, 550);
         }
+        context.restore();
     }
     
     /**
@@ -582,8 +597,12 @@ class Game {
 
     createEnemyPool() {
         for (let i = 0; i < this.numberOfEnemies; ++i) {
-            // this.enemyPool.push(new Asteroid(this));
-            this.enemyPool.push(new Lobstermorph(this));
+            let randomNumber = Math.random();
+            if (randomNumber > 0.25) {
+                this.enemyPool.push(new Asteroid(this));
+            } else {
+                this.enemyPool.push(new Lobstermorph(this));
+            }
         }
     }
 
