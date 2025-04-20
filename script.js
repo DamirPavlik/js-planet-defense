@@ -301,6 +301,33 @@ class Beetlemorph extends Enemy {
     }
 }
 
+class Rhinomorph extends Enemy {
+    /**
+     * @param {Game} game 
+     */
+    constructor(game) {
+        super(game);
+        
+        /** @type {HTMLImageElement} */
+        this.image = document.querySelector("#rhinomorph");
+
+        /** @type {number} */
+        this.frameY = Math.floor(Math.random() * 4);
+
+        /** @type {number} */
+        this.frameX = 0;
+
+        /** @type {number} */
+        this.lives = 4;
+
+        /** @type {number} */
+        this.maxFrame = 6;
+
+        /** @type {number} */
+        this.maxLives = this.lives;
+    }
+}
+
 class Lobstermorph extends Enemy {
     /**
      * @param {Game} game 
@@ -629,6 +656,8 @@ class Game {
                 this.enemyPool.push(new Asteroid(this));
             } else if (randomNumber < 0.5) {
                 this.enemyPool.push(new Beetlemorph(this));
+            } else if (randomNumber < 0.75) {
+                this.enemyPool.push(new Rhinomorph(this));
             } else {
                 this.enemyPool.push(new Lobstermorph(this));
             }
